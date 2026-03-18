@@ -20,7 +20,7 @@
 				</view>
 				<view class="search-box">
 					<text class="search-icon">🔍</text>
-					<input class="search-input" type="text" placeholder="求知是人类的本性" />
+					<input class="search-input" type="text" placeholder="搜课程、找练习" />
 				</view>
 				<view class="header-right">
 					<view class="live-btn">
@@ -94,6 +94,27 @@
 											<text class="iconfont">{{item.icon}}</text>
 										</view>
 										<text class="icon-name">{{item.name}}</text>
+									</view>
+								</view>
+							</scroll-view>
+						</view>
+
+						<!-- 刷题分类（后端题目分类 type=2） -->
+						<view v-if="quizCategories.length" class="quiz-categories-section">
+							<view class="section-header">
+								<text class="section-title">按分类刷题</text>
+								<text class="arrow-icon" @click="goToQuiz()">去刷题 ›</text>
+							</view>
+							<scroll-view class="quiz-categories-scroll" scroll-x="true" show-scrollbar="false">
+								<view class="quiz-categories-row">
+									<view 
+										class="quiz-cat-item" 
+										v-for="(cat, index) in quizCategories" 
+										:key="cat.id || index"
+										@click="goToQuiz(cat.id)"
+									>
+										<view class="quiz-cat-icon" :style="{ backgroundColor: cat.bgColor || '#00d26a' }">{{ cat.icon || '✏' }}</view>
+										<text class="quiz-cat-name">{{ cat.name }}</text>
 									</view>
 								</view>
 							</scroll-view>
@@ -292,24 +313,25 @@
 			</swiper-item>
 		</swiper>
 
-		<!-- 底部导航栏 -->
+		<!-- 底部导航栏（内联，避免组件解析白屏） -->
 		<view class="bottom-tab-bar">
-			<view 
-				v-for="(tab, index) in bottomTabs" 
+			<view
+				v-for="(tab, index) in bottomTabs"
 				:key="index"
 				class="bottom-tab-item"
 				:class="{ active: activeBottomTab === index }"
 				@click="switchBottomTab(index)"
 			>
-				<text class="tab-icon">{{tab.icon}}</text>
-				<text class="tab-name">{{tab.name}}</text>
-				<view class="badge" v-if="tab.badge > 0">{{tab.badge}}</view>
+				<text class="tab-icon">{{ tab.icon }}</text>
+				<text class="tab-name">{{ tab.name }}</text>
 			</view>
 		</view>
 	</view>
 </template>
 
 <script>
+	import { categoryApi } from '@/api/index.js'
+
 	export default {
 		data() {
 			return {
@@ -317,6 +339,13 @@
 				activeBottomTab: 0,
 				categorySticky: false,
 				tabs: ['推荐', '公开课', '精品课', '演讲', '纪录片'],
+				bottomTabs: [
+					{ name: '首页', icon: '🏠' },
+					{ name: '找课', icon: '📝' },
+					{ name: '刷题', icon: '✏' },
+					{ name: '社区', icon: '💬' },
+					{ name: '我', icon: '👤' }
+				],
 
 				// 推荐页面数据 - 可滑动的分类（8个，不含全部分区）
 				scrollableCategories: [
@@ -329,6 +358,8 @@
 					{ name: '理工学科', icon: '⚗', bgColor: '#00d26a' },
 					{ name: '语言文学', icon: '文', bgColor: '#4A90E2' }
 				],
+				// 题目分类（后端 type=2），用于「按分类刷题」
+				quizCategories: [],
 				// 三级目录视频列表数据 - 3x3九宫格分页
 				videoSections: [
 					{
@@ -604,28 +635,47 @@
 							}
 						]
 					}
-				],
-				bottomTabs: [
-					{ name: '首页', icon: '🏠', badge: 0 },
-					{ name: '找课', icon: '📝', badge: 0 },
-					{ name: '刷题', icon: '✏', badge: 0 },
-					{ name: '社区', icon: '💬', badge: 0 },
-					{ name: '我', icon: '👤', badge: 0 }
 				]
 			}
 		},
 		onLoad() {
-
+			// 课程分类（type=1）→ 首页可滑动分类
+			categoryApi.getCategoryList(1).then((list) => {
+				if (list && list.length) {
+					this.scrollableCategories = list.map((c) => ({
+						name: c.name,
+						icon: c.icon || '▶',
+						bgColor: c.bgColor || '#4A90E2'
+					}))
+				}
+			}).catch(() => {})
+			// 题目分类（type=2）→ 按分类刷题
+			categoryApi.getCategoryList(2).then((list) => {
+				if (list && list.length) {
+					this.quizCategories = list.map((c) => ({
+						id: c.id,
+						name: c.name,
+						icon: c.icon || '✏',
+						bgColor: c.bgColor || '#00d26a'
+					}))
+				}
+			}).catch(() => {})
 		},
 		methods: {
 			switchTab(index) {
 				console.log('切换标签:', index)
 				this.activeTab = index
 			},
+			switchBottomTab(index) {
+				if (this.activeBottomTab === index) return
+				this.activeBottomTab = index
+				const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/index/index', '/pages/index/index']
+				uni.reLaunch({ url: routes[index] })
+			},
 			onSwiperChange(e) {
 				console.log('swiper切换:', e.detail.current)
 				this.activeTab = e.detail.current
-			},
+			},	
 			onRecommendScroll(e) {
 				const scrollTop = e.detail.scrollTop
 				// 获取banner的高度（约120rpx）作为临界点
@@ -634,15 +684,6 @@
 					this.categorySticky = true
 				} else {
 					this.categorySticky = false
-				}
-			},
-			switchBottomTab(index) {
-				this.activeBottomTab = index
-				// 点击刷题按钮跳转到刷题页面（tabBar页面用switchTab）
-				if (index === 2) {
-					uni.switchTab({
-						url: '/pages/quiz/quiz'
-					})
 				}
 			},
 			loadMore() {
@@ -654,6 +695,10 @@
 					title: `查看${moduleTitle}更多`,
 					icon: 'none'
 				})
+			},
+			goToQuiz(categoryId) {
+				const url = categoryId ? `/pages/quiz/quiz?categoryId=${categoryId}` : '/pages/quiz/quiz'
+				uni.navigateTo({ url })
 			}
 		}
 	}
@@ -1183,6 +1228,42 @@
 		margin-bottom: 20rpx;
 	}
 
+	.quiz-categories-section {
+		background-color: #fff;
+		padding: 20rpx 0;
+		margin-bottom: 20rpx;
+	}
+	.quiz-categories-scroll {
+		white-space: nowrap;
+		padding: 0 20rpx;
+	}
+	.quiz-categories-row {
+		display: inline-flex;
+		gap: 24rpx;
+		padding: 10rpx 0;
+	}
+	.quiz-cat-item {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		min-width: 120rpx;
+	}
+	.quiz-cat-icon {
+		width: 80rpx;
+		height: 80rpx;
+		border-radius: 16rpx;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 36rpx;
+		color: #fff;
+		margin-bottom: 8rpx;
+	}
+	.quiz-cat-name {
+		font-size: 24rpx;
+		color: #333;
+	}
+
 	.ranking-swiper {
 		height: 400rpx;
 		margin: 0 20rpx;
@@ -1554,9 +1635,9 @@
 		color: #999;
 	}
 
-	/* 底部留白 */
+	/* 底部留白 - 为自定义tabBar留出空间 */
 	.bottom-space {
-		height: 120rpx;
+		height: 140rpx;
 	}
 
 	/* 底部导航栏 */
@@ -1579,35 +1660,19 @@
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		position: relative;
 	}
 
-	.tab-icon {
+	.bottom-tab-bar .tab-icon {
 		font-size: 40rpx;
 		margin-bottom: 6rpx;
 	}
 
-	.tab-name {
+	.bottom-tab-bar .tab-name {
 		font-size: 22rpx;
 		color: #999;
 	}
 
 	.bottom-tab-item.active .tab-name {
 		color: #00d26a;
-	}
-
-	.badge {
-		position: absolute;
-		top: -10rpx;
-		right: -15rpx;
-		background-color: #ff4444;
-		color: #fff;
-		font-size: 18rpx;
-		width: 30rpx;
-		height: 30rpx;
-		border-radius: 50%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
 	}
 </style>

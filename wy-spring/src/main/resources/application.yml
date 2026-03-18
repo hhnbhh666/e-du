@@ -1,0 +1,58 @@
+spring:
+  application:
+    name: wy-spring
+
+  # 数据源配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/wy_edu?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: phq517762
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      connection-timeout: 20000
+
+  # Redis配置
+  redis:
+    host: localhost
+    port: 6379
+    password: phq517762
+    database: 0
+    timeout: 3000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+
+# 服务器配置
+server:
+  port: 8080
+
+# MyBatis-Plus配置
+mybatis-plus:
+  mapper-locations: classpath:/mapper/**/*.xml
+  type-aliases-package: org.example.wyspring.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: isDeleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+      id-type: auto
+
+# JWT配置
+jwt:
+  secret: wy-spring-jwt-secret-key-2026
+  expiration: 86400000  # 24小时
+
+# 日志配置
+logging:
+  level:
+    org.example.wyspring: debug
+    org.springframework.security: debug

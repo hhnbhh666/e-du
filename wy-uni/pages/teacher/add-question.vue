@@ -321,16 +321,40 @@ export default {
 			const explanation = await this.getEditorContent()
 			this.question.explanation = explanation
 			
-			// 模拟保存
-			console.log('保存题目:', this.question)
-			uni.showModal({
-				title: '保存成功',
-				content: '题目已提交审核，通过后将上架',
-				showCancel: false,
-				success: () => {
-					uni.navigateBack()
-				}
-			})
+			// 调用后端接口保存题目
+			uni.showLoading({ title: '保存中...' })
+			try {
+				const { teacherApi } = await import('@/api/index.js')
+				const options = this.question.options.map(opt => ({
+					letter: opt.letter,
+					content: opt.text
+				}))
+				await teacherApi.createQuestion({
+					content: this.question.content,
+					imageUrl: this.question.image || null,
+					videoUrl: this.question.videoUrl || null,
+					type: this.question.type,
+					categoryId: 2, // 默认小学数学，后续可让用户选择
+					difficulty: 2, // 默认中等
+					options: options,
+					correctAnswer: this.question.correctAnswer,
+					tip: this.question.tip || null,
+					explanation: this.question.explanation || null
+				})
+				uni.hideLoading()
+				uni.showModal({
+					title: '保存成功',
+					content: '题目已创建',
+					showCancel: false,
+					success: () => {
+						uni.navigateBack()
+					}
+				})
+			} catch (e) {
+				uni.hideLoading()
+				uni.showToast({ title: '保存失败，请重试', icon: 'none' })
+				console.error('保存题目失败:', e)
+			}
 		}
 	}
 }

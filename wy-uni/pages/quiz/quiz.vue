@@ -59,7 +59,15 @@
 
 		<!-- 题目区域 -->
 		<scroll-view class="quiz-content" scroll-y="true">
-			<!-- 题目信息 -->
+			<!-- 无题目时的空状态（后端无数据时显示） -->
+			<view v-if="showEmptyState" class="empty-state">
+				<text class="empty-icon">📝</text>
+				<text class="empty-text">暂无题目</text>
+				<text class="empty-hint">请稍后再来或去首页看看</text>
+			</view>
+
+			<!-- 题目信息（有题目时显示） -->
+			<view v-else-if="currentQuestion && currentQuestion.options" class="question-block">
 			<view class="question-info">
 				<text class="question-type">单选</text>
 				<text class="question-content">{{currentQuestion.content}}</text>
@@ -67,8 +75,8 @@
 			</view>
 
 			<!-- 题目图片 -->
-			<view class="question-image" v-if="currentQuestion.image">
-				<image :src="currentQuestion.image" mode="aspectFit"></image>
+			<view class="question-image" v-if="currentQuestion.imageUrl">
+				<image :src="currentQuestion.imageUrl" mode="aspectFit"></image>
 			</view>
 
 			<!-- 选项列表 -->
@@ -79,15 +87,15 @@
 					class="option-item"
 					:class="{ 
 						selected: selectedOption === index,
-						correct: hasAnswered && index === currentQuestion.correctAnswer,
-						wrong: hasAnswered && selectedOption === index && index !== currentQuestion.correctAnswer
+						correct: hasAnswered && index === Number(currentQuestion.correctAnswer),
+						wrong: hasAnswered && selectedOption === index && index !== Number(currentQuestion.correctAnswer)
 					}"
 					@click="selectOption(index)"
 				>
 					<text class="option-letter">{{option.letter}}</text>
-					<text class="option-text">{{option.text}}</text>
+					<text class="option-text">{{option.content || option.text}}</text>
 					<text class="option-icon" v-if="hasAnswered">
-						<text v-if="index === currentQuestion.correctAnswer" class="correct-icon">✓</text>
+						<text v-if="index === Number(currentQuestion.correctAnswer)" class="correct-icon">✓</text>
 						<text v-else-if="selectedOption === index" class="wrong-icon">✗</text>
 					</text>
 				</view>
@@ -97,8 +105,10 @@
 			<view class="answer-result" v-if="hasAnswered">
 				<view class="result-header">
 					<text class="result-title">答案</text>
-					<text class="correct-answer">{{currentQuestion.options[currentQuestion.correctAnswer].letter}}</text>
-					<text class="your-answer" :class="{ wrong: !isCorrect }">您选择 {{selectedOption !== null ? currentQuestion.options[selectedOption].letter : '-'}}</text>
+					<text class="correct-answer" v-if="currentQuestion.options && currentQuestion.options[Number(currentQuestion.correctAnswer)]">
+						{{currentQuestion.options[Number(currentQuestion.correctAnswer)].letter}}
+					</text>
+					<text class="your-answer" :class="{ wrong: !isCorrect }">您选择 {{selectedOption !== null && currentQuestion.options ? currentQuestion.options[selectedOption].letter : '-'}}</text>
 				</view>
 			</view>
 
@@ -130,6 +140,18 @@
 							<text class="play-icon">▶</text>
 						</view>
 					</view>
+				</view>
+			</view>
+
+			<!-- 上一题/下一题按钮（答完题后显示） -->
+			<view class="nav-question-section" v-if="hasAnswered">
+				<view class="nav-btn prev-btn" @click="goToPrevQuestion">
+					<text class="nav-icon">‹</text>
+					<text class="nav-text">上一题</text>
+				</view>
+				<view class="nav-btn next-btn" @click="goToNextQuestion">
+					<text class="nav-text">下一题</text>
+					<text class="nav-icon">›</text>
 				</view>
 			</view>
 
@@ -174,6 +196,8 @@
 					<text class="send-btn" @click="submitComment">发送</text>
 				</view>
 			</view>
+			</view>
+			<!-- /question-block -->
 
 			<view class="bottom-space"></view>
 		</scroll-view>
@@ -185,172 +209,362 @@
 			<image class="teacher-avatar" src="https://picsum.photos/80/80?random=teacher" mode="aspectFill"></image>
 			<text class="teacher-text">点我讲题</text>
 		</view>
+
+		<!-- 底部导航栏（内联） -->
+		<view class="bottom-tab-bar">
+			<view
+				v-for="(tab, index) in bottomTabs"
+				:key="index"
+				class="bottom-tab-item"
+				:class="{ active: index === 2 }"
+				@click="goBottomTab(index)"
+			>
+				<text class="tab-icon">{{ tab.icon }}</text>
+				<text class="tab-name">{{ tab.name }}</text>
+			</view>
+		</view>
 	</view>
 </template>
 
-<script>
-	export default {
-		data() {
-			return {
-				currentMode: 'answer',
-				showAd: true,
-				currentIndex: 20,
-				totalQuestions: 2013,
-				selectedOption: null,
-				hasAnswered: false,
-				isCorrect: false,
-				isCollected: false,
-				wrongCount: 1,
-				rightCount: 19,
-				showTeacherFloat: true,
-				isTeacher: true, // 是否是老师角色，实际应从用户信息获取
-				commentSort: 'hot',
-				newComment: '',
-				currentQuestion: {
-					content: '遇到图中情形可加速通过。',
-					image: 'https://picsum.photos/600/400?random=quiz1',
-					videoThumb: 'https://picsum.photos/600/340?random=video',
-					options: [
-						{ letter: 'A', text: '正确' },
-						{ letter: 'B', text: '错误' }
-					],
-					correctAnswer: 1,
-					tip: '遇路口，先减速。',
-					explanation: '图中显示的是让行标志，遇到这种情形应当减速慢行，确保安全后再通过，而不是加速通过。'
-				},
-				comments: [
-					{
-						name: '驾考小学员',
-						avatar: 'https://picsum.photos/60/60?random=1',
-						text: '这种题最容易错了，记住看到让行标志就一定要减速！',
-						likes: 128,
-						liked: false,
-						time: '2小时前',
-						isAuthor: false
-					},
-					{
-						name: '老司机带带我',
-						avatar: 'https://picsum.photos/60/60?random=2',
-						text: '科目一考了98分，分享经验：遇到路口、人行横道、学校区域都要减速慢行',
-						likes: 256,
-						liked: true,
-						time: '5小时前',
-						isAuthor: false
-					},
-					{
-						name: '教练小王',
-						avatar: 'https://picsum.photos/60/60?random=3',
-						text: '记住口诀：让行标志必减速，安全驾驶第一位！',
-						likes: 89,
-						liked: false,
-						time: '1天前',
-						isAuthor: true
-					}
-				]
-			}
-		},
-		methods: {
-			goBack() {
-				uni.navigateBack()
-			},
-			switchMode(mode) {
-				this.currentMode = mode
-			},
-			showSettings() {
-				uni.showToast({ title: '设置功能', icon: 'none' })
-			},
-			closeAd() {
-				this.showAd = false
-			},
-			readQuestion() {
-				uni.showToast({ title: '语音读题', icon: 'none' })
-			},
-			// 跳转到添加题目页面
-			goToAddQuestion() {
-				uni.navigateTo({
-					url: '/pages/teacher/add-question'
-				})
-			},
-			// 跳转到文档导入页面
-			goToDocImport() {
-				uni.navigateTo({
-					url: '/pages/teacher/doc-import'
-				})
-			},
-			selectOption(index) {
-				if (this.hasAnswered) return
-				
-				this.selectedOption = index
-				this.hasAnswered = true
-				this.isCorrect = index === this.currentQuestion.correctAnswer
-				
-				if (this.isCorrect) {
-					this.rightCount++
-					uni.showToast({ title: '回答正确！', icon: 'success' })
-				} else {
-					this.wrongCount++
-					uni.showToast({ title: '回答错误', icon: 'none' })
-				}
-			},
-			viewFullTip() {
-				uni.showModal({
-					title: '完整技巧',
-					content: this.currentQuestion.explanation,
-					showCancel: false
-				})
-			},
-			playVideo() {
-				uni.showToast({ title: '播放视频讲解', icon: 'none' })
-			},
-			sortComments(sort) {
-				this.commentSort = sort
-			},
-			likeComment(index) {
-				const comment = this.comments[index]
-				comment.liked = !comment.liked
-				comment.likes += comment.liked ? 1 : -1
-			},
-			replyComment(index) {
-				uni.showToast({ title: `回复${this.comments[index].name}`, icon: 'none' })
-			},
-			submitComment() {
-				if (!this.newComment.trim()) {
-					uni.showToast({ title: '请输入评论内容', icon: 'none' })
-					return
-				}
-				this.comments.unshift({
-					name: '我',
-					avatar: 'https://picsum.photos/60/60?random=me',
-					text: this.newComment,
-					likes: 0,
-					liked: false,
-					time: '刚刚',
-					isAuthor: false
-				})
-				this.newComment = ''
-				uni.showToast({ title: '评论发表成功', icon: 'success' })
-			},
-			askTeacher() {
-				uni.showToast({ title: '呼叫老师讲解', icon: 'none' })
-			},
-			collectQuestion() {
-				this.isCollected = !this.isCollected
-				uni.showToast({ 
-					title: this.isCollected ? '已收藏' : '取消收藏', 
-					icon: 'none' 
-				})
-			},
-			viewWrong() {
-				uni.showToast({ title: `错题本：${this.wrongCount}题`, icon: 'none' })
-			},
-			viewRight() {
-				uni.showToast({ title: `对题：${this.rightCount}题`, icon: 'none' })
-			},
-			showQuestionList() {
-				uni.showToast({ title: '题目列表', icon: 'none' })
-			}
-		}
-	}
+<script setup>
+import { ref } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { questionApi } from '@/api/index.js'
+
+// ========= 响应式状态 =========
+
+const currentMode = ref<'answer' | 'review' | 'video'>('answer')
+const showAd = ref(true)
+const currentIndex = ref(1)
+const totalQuestions = ref(0)
+const selectedOption = ref(null)
+const hasAnswered = ref(false)
+const isCorrect = ref(false)
+const isCollected = ref(false)
+const wrongCount = ref(1)
+const rightCount = ref(19)
+const showTeacherFloat = ref(true)
+// 先不区分老师角色，统一展示老师入口
+const isTeacher = ref(true)
+const commentSort = ref('hot')
+const newComment = ref('')
+const questionList = ref([])
+/** 接口成功但无题目时显示空状态；接口失败时用默认题不显示空状态 */
+const showEmptyState = ref(false)
+
+const bottomTabs = [
+  { name: '首页', icon: '🏠' },
+  { name: '找课', icon: '📝' },
+  { name: '刷题', icon: '✏' },
+  { name: '社区', icon: '💬' },
+  { name: '我', icon: '👤' }
+]
+function goBottomTab(index) {
+  if (index === 2) return
+  const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/index/index', '/pages/index/index']
+  uni.reLaunch({ url: routes[index] })
+}
+
+// 默认示例题目（中小学题型），后端加载成功后会覆盖
+const currentQuestion = ref({
+  id: 1,
+  content: '小明有 12 个苹果，吃了 3 个，又买来 5 个。现在小明一共有几个苹果？',
+  imageUrl: '',
+  videoThumb: 'https://picsum.photos/600/340?random=video',
+  options: [
+    { letter: 'A', content: '10 个' },
+    { letter: 'B', content: '13 个' },
+    { letter: 'C', content: '14 个' },
+    { letter: 'D', content: '15 个' }
+  ],
+  correctAnswer: 2,
+  tip: '先减后加，注意顺序。',
+  explanation: '12 - 3 = 9（个），9 + 5 = 14（个）。现在一共有 14 个苹果。'
+})
+
+// 默认示例评论（中小学学习场景）
+const comments = ref([
+  {
+    name: '乐乐妈妈',
+    avatar: 'https://picsum.photos/60/60?random=1',
+    text: '这类应用题要先理清数量关系，孩子多做几道就熟了！',
+    likes: 128,
+    liked: false,
+    time: '2小时前',
+    isAuthor: false
+  },
+  {
+    name: '五年级小明',
+    avatar: 'https://picsum.photos/60/60?random=2',
+    text: '老师讲过先算吃了以后剩几个，再加买来的，答案 14 个。',
+    likes: 256,
+    liked: true,
+    time: '5小时前',
+    isAuthor: false
+  },
+  {
+    name: '张老师',
+    avatar: 'https://picsum.photos/60/60?random=3',
+    text: '加减混合运算要按顺序算，注意审题别漏掉步骤哦。',
+    likes: 89,
+    liked: false,
+    time: '1天前',
+    isAuthor: true
+  }
+])
+
+// ========= 生命周期 =========
+
+onLoad(async (options) => {
+  const categoryId = options && options.categoryId ? parseInt(options.categoryId, 10) : undefined
+  await loadQuestions(categoryId)
+})
+
+// ========= 方法 =========
+
+// 加载题目列表（真数据，可选按分类筛选）
+async function loadQuestions(categoryId) {
+  uni.showLoading({ title: '加载中...' })
+  try {
+    const res = await questionApi.getQuestionList({
+      page: 1,
+      size: 20,
+      ...(categoryId ? { categoryId } : {})
+    })
+    const list = res?.list || []
+    const total = res?.total ?? 0
+    questionList.value = list
+    totalQuestions.value = total
+    showEmptyState.value = list.length === 0
+
+    if (list.length > 0) {
+      await loadQuestionDetail(list[0].id)
+    } else {
+      currentQuestion.value = null
+    }
+  } catch (e) {
+    showEmptyState.value = false
+    console.warn('加载题目失败，使用默认示例题目', e)
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+// 加载题目详情
+async function loadQuestionDetail(id) {
+  uni.showLoading({ title: '加载中...' })
+  try {
+    const question = await questionApi.getQuestionDetail(id)
+
+    currentQuestion.value = {
+      ...question,
+      videoThumb: question.videoUrl || 'https://picsum.photos/600/340?random=video'
+    }
+
+    // 重置答题状态
+    selectedOption.value = null
+    hasAnswered.value = question.hasAnswered || false
+    isCorrect.value = question.correct || false
+    isCollected.value = question.isFavorited || false
+  } catch (e) {
+    uni.showToast({ title: '加载题目详情失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+function goBack() {
+  uni.navigateBack()
+}
+
+function switchMode(mode) {
+  currentMode.value = mode
+}
+
+function showSettings() {
+  uni.showToast({ title: '设置功能', icon: 'none' })
+}
+
+function closeAd() {
+  showAd.value = false
+}
+
+function readQuestion() {
+  uni.showToast({ title: '语音读题', icon: 'none' })
+}
+
+// 跳转到添加题目页面
+function goToAddQuestion() {
+  uni.navigateTo({
+    url: '/pages/teacher/add-question'
+  })
+}
+
+// 跳转到文档导入页面
+function goToDocImport() {
+  uni.navigateTo({
+    url: '/pages/teacher/doc-import'
+  })
+}
+
+// 选择选项并提交答案
+async function selectOption(index) {
+  if (hasAnswered.value) return
+
+  selectedOption.value = index
+
+  try {
+    uni.showLoading({ title: '提交中...' })
+    const result = await questionApi.submitAnswer(currentQuestion.value.id, index)
+    
+    // 调试输出
+    console.log('submitAnswer result:', JSON.stringify(result))
+    console.log('correctAnswer:', result.correctAnswer, 'type:', typeof result.correctAnswer)
+
+    hasAnswered.value = true
+    // 后端返回的是 correct 字段（Boolean）
+    isCorrect.value = result.correct === true
+
+    // 更新题目数据（包含解析）- 确保 correctAnswer 有效
+    const updatedQuestion = {
+      ...currentQuestion.value,
+      ...result
+    }
+    // 如果后端没有返回 correctAnswer，保留原来的值
+    if (result.correctAnswer === undefined || result.correctAnswer === null) {
+      updatedQuestion.correctAnswer = currentQuestion.value.correctAnswer
+    }
+    currentQuestion.value = updatedQuestion
+
+    if (isCorrect.value) {
+      rightCount.value++
+      uni.showToast({ title: '回答正确！', icon: 'success' })
+    } else {
+      wrongCount.value++
+      uni.showToast({ title: '回答错误', icon: 'none' })
+    }
+  } catch (e) {
+    // 接口失败时本地判题，避免“提交失败”且保证 loading 配对
+    const correctIndex = currentQuestion.value.correctAnswer
+    const ok = correctIndex !== undefined && index === correctIndex
+    hasAnswered.value = true
+    isCorrect.value = ok
+    if (ok) {
+      rightCount.value++
+      uni.showToast({ title: '回答正确！', icon: 'success' })
+    } else {
+      wrongCount.value++
+      uni.showToast({ title: '回答错误', icon: 'none' })
+    }
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+function viewFullTip() {
+  uni.showModal({
+    title: '完整技巧',
+    content: currentQuestion.value.explanation,
+    showCancel: false
+  })
+}
+
+function playVideo() {
+  uni.showToast({ title: '播放视频讲解', icon: 'none' })
+}
+
+function sortComments(sort) {
+  commentSort.value = sort
+}
+
+function likeComment(index) {
+  const comment = comments.value[index]
+  comment.liked = !comment.liked
+  comment.likes += comment.liked ? 1 : -1
+}
+
+function replyComment(index) {
+  uni.showToast({ title: `回复${comments.value[index].name}`, icon: 'none' })
+}
+
+function submitComment() {
+  if (!newComment.value.trim()) {
+    uni.showToast({ title: '请输入评论内容', icon: 'none' })
+    return
+  }
+  comments.value.unshift({
+    name: '我',
+    avatar: 'https://picsum.photos/60/60?random=me',
+    text: newComment.value,
+    likes: 0,
+    liked: false,
+    time: '刚刚',
+    isAuthor: false
+  })
+  newComment.value = ''
+  uni.showToast({ title: '评论发表成功', icon: 'success' })
+}
+
+function askTeacher() {
+  uni.showToast({ title: '呼叫老师讲解', icon: 'none' })
+}
+
+// 收藏/取消收藏题目
+async function collectQuestion() {
+  uni.showLoading({ title: '处理中...' })
+  try {
+    const isFavorited = await questionApi.toggleFavorite(currentQuestion.value.id)
+    isCollected.value = !!isFavorited
+    uni.showToast({
+      title: isCollected.value ? '已收藏' : '取消收藏',
+      icon: 'none'
+    })
+  } catch (e) {
+    uni.showToast({ title: '操作失败', icon: 'none' })
+  } finally {
+    uni.hideLoading()
+  }
+}
+
+function viewWrong() {
+  uni.showToast({ title: `错题本：${wrongCount.value}题`, icon: 'none' })
+}
+
+function viewRight() {
+  uni.showToast({ title: `对题：${rightCount.value}题`, icon: 'none' })
+}
+
+function showQuestionList() {
+  uni.showToast({ title: '题目列表', icon: 'none' })
+}
+
+// 上一题
+function goToPrevQuestion() {
+  const currentId = currentQuestion.value?.id
+  const currentIndex = questionList.value.findIndex(q => q.id === currentId)
+  if (currentIndex > 0) {
+    const prevId = questionList.value[currentIndex - 1].id
+    loadQuestionDetail(prevId)
+  } else if (currentIndex === 0) {
+    uni.showToast({ title: '已经是第一题了', icon: 'none' })
+  } else {
+    uni.showToast({ title: '暂无更多题目', icon: 'none' })
+  }
+}
+
+// 下一题
+function goToNextQuestion() {
+  const currentId = currentQuestion.value?.id
+  const currentIndex = questionList.value.findIndex(q => q.id === currentId)
+  if (currentIndex >= 0 && currentIndex < questionList.value.length - 1) {
+    const nextId = questionList.value[currentIndex + 1].id
+    loadQuestionDetail(nextId)
+  } else if (currentIndex === questionList.value.length - 1) {
+    uni.showToast({ title: '已经是最后一题了', icon: 'none' })
+  } else {
+    uni.showToast({ title: '暂无更多题目', icon: 'none' })
+  }
+}
 </script>
 
 <style>
@@ -521,6 +735,27 @@
 	.quiz-content {
 		flex: 1;
 		padding: 30rpx;
+	}
+
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 120rpx 40rpx;
+	}
+	.empty-icon {
+		font-size: 100rpx;
+		margin-bottom: 24rpx;
+	}
+	.empty-text {
+		font-size: 32rpx;
+		color: #333;
+		margin-bottom: 12rpx;
+	}
+	.empty-hint {
+		font-size: 26rpx;
+		color: #999;
 	}
 
 	.question-info {
@@ -1000,7 +1235,79 @@
 		margin-top: -10rpx;
 	}
 
+	/* 上一题/下一题按钮 */
+	.nav-question-section {
+		margin: 30rpx 0;
+		display: flex;
+		justify-content: space-between;
+		gap: 20rpx;
+	}
+	.nav-btn {
+		flex: 1;
+		border-radius: 50rpx;
+		padding: 30rpx 40rpx;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+	}
+	.prev-btn {
+		background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+	}
+	.prev-btn .nav-text, .prev-btn .nav-icon {
+		color: #666;
+	}
+	.next-btn {
+		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	}
+	.next-btn .nav-text, .next-btn .nav-icon {
+		color: #fff;
+	}
+	.nav-text {
+		font-size: 32rpx;
+		font-weight: bold;
+		margin: 0 10rpx;
+	}
+	.nav-icon {
+		font-size: 36rpx;
+	}
+
 	.bottom-space {
-		height: 40rpx;
+		height: 140rpx;
+	}
+
+	/* 底部导航栏 */
+	.bottom-tab-bar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: 100rpx;
+		background-color: #fff;
+		display: flex;
+		justify-content: space-around;
+		align-items: center;
+		border-top: 1rpx solid #f0f0f0;
+		padding-bottom: env(safe-area-inset-bottom);
+		z-index: 1000;
+	}
+
+	.bottom-tab-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.bottom-tab-bar .tab-icon {
+		font-size: 40rpx;
+		margin-bottom: 6rpx;
+	}
+
+	.bottom-tab-bar .tab-name {
+		font-size: 22rpx;
+		color: #999;
+	}
+
+	.bottom-tab-item.active .tab-name {
+		color: #00d26a;
 	}
 </style>
