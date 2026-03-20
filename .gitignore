@@ -1,2 +1,5 @@
 .idea/
 .vscode/
+
+# 本地/团队代码规范，不纳入版本库
+Coding-Standards.md
