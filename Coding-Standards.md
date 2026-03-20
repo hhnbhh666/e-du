@@ -65,6 +65,11 @@ currentQuestion.value.correctAnswer = Number(res.correctAnswer)
 - 常量：UPPER_SNAKE_CASE
 - 布尔值前缀：is/has/show
 
+### 1.4 老师端页面路由（题目与试卷）
+- **聚合页**：`pages/teacher/teacher-manage` — 含「手动新增题目」「扫描导入试卷」两个入口。
+- **子页**：`add-question`（单题录入）、`doc-import`（OCR 试卷识别导入）。
+- **主入口**：底部导航 **「找课」**（`index` / `quiz` / `teacher-manage` 内联底栏一致）。老师角色下点击「找课」进入 `teacher-manage`；刷题页不再单独放老师入口卡片。
+
 ---
 
 ## 二、后端规范 (wy-spring)

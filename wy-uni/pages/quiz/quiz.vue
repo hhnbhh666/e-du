@@ -33,31 +33,7 @@
 			<text class="ad-close" @click="closeAd">✕</text>
 		</view>
 
-		<!-- 老师功能区（仅老师角色显示） -->
-		<view class="teacher-actions" v-if="isTeacher">
-			<view class="action-card" @click="goToAddQuestion">
-				<view class="action-icon add-icon">
-					<text>➕</text>
-				</view>
-				<view class="action-info">
-					<text class="action-title">添加题目</text>
-					<text class="action-desc">手动创建新题目</text>
-				</view>
-				<text class="action-arrow">›</text>
-			</view>
-			<view class="action-card" @click="goToDocImport">
-				<view class="action-icon import-icon">
-					<text>📄</text>
-				</view>
-				<view class="action-info">
-					<text class="action-title">文档导入</text>
-					<text class="action-desc">OCR识别试卷自动导入</text>
-				</view>
-				<text class="action-arrow">›</text>
-			</view>
-		</view>
-
-		<!-- 题目区域 -->
+		<!-- 题目区域（老师入口见底部导航「找课」） -->
 		<scroll-view class="quiz-content" scroll-y="true">
 			<!-- 无题目时的空状态（后端无数据时显示） -->
 			<view v-if="showEmptyState" class="empty-state">
@@ -244,7 +220,7 @@ const isCollected = ref(false)
 const wrongCount = ref(1)
 const rightCount = ref(19)
 const showTeacherFloat = ref(true)
-// 先不区分老师角色，统一展示老师入口
+// 老师入口统一走底部导航「找课」→ teacher-manage；此处保留便于以后接登录态
 const isTeacher = ref(true)
 const commentSort = ref('hot')
 const newComment = ref('')
@@ -261,6 +237,10 @@ const bottomTabs = [
 ]
 function goBottomTab(index) {
   if (index === 2) return
+  if (index === 1 && isTeacher.value) {
+    uni.reLaunch({ url: '/pages/teacher/teacher-manage' })
+    return
+  }
   const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/index/index', '/pages/index/index']
   uni.reLaunch({ url: routes[index] })
 }
@@ -391,20 +371,6 @@ function closeAd() {
 
 function readQuestion() {
   uni.showToast({ title: '语音读题', icon: 'none' })
-}
-
-// 跳转到添加题目页面
-function goToAddQuestion() {
-  uni.navigateTo({
-    url: '/pages/teacher/add-question'
-  })
-}
-
-// 跳转到文档导入页面
-function goToDocImport() {
-  uni.navigateTo({
-    url: '/pages/teacher/doc-import'
-  })
 }
 
 // 选择选项并提交答案
@@ -667,68 +633,6 @@ function goToNextQuestion() {
 		font-size: 32rpx;
 		color: #999;
 		padding: 10rpx;
-	}
-
-	/* 老师功能区 */
-	.teacher-actions {
-		padding: 20rpx 30rpx;
-		background-color: #fff;
-		margin-bottom: 20rpx;
-	}
-
-	.action-card {
-		display: flex;
-		align-items: center;
-		padding: 30rpx;
-		background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
-		border-radius: 16rpx;
-		margin-bottom: 20rpx;
-		border: 1rpx solid #e8e8e8;
-	}
-
-	.action-card:last-child {
-		margin-bottom: 0;
-	}
-
-	.action-icon {
-		width: 80rpx;
-		height: 80rpx;
-		border-radius: 20rpx;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-right: 20rpx;
-		font-size: 40rpx;
-	}
-
-	.add-icon {
-		background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-	}
-
-	.import-icon {
-		background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-	}
-
-	.action-info {
-		flex: 1;
-	}
-
-	.action-title {
-		font-size: 32rpx;
-		font-weight: bold;
-		color: #333;
-		display: block;
-		margin-bottom: 8rpx;
-	}
-
-	.action-desc {
-		font-size: 26rpx;
-		color: #999;
-	}
-
-	.action-arrow {
-		font-size: 40rpx;
-		color: #ccc;
 	}
 
 	/* 题目区域 */

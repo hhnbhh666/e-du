@@ -2,6 +2,11 @@ spring:
   application:
     name: wy-spring
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 12MB
+
   # 数据源配置
   datasource:
     url: jdbc:mysql://localhost:3306/wy_edu?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
@@ -45,6 +50,14 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
       id-type: auto
+
+# 百度 OCR — 本地可设环境变量：BAIDU_OCR_ENABLED=true BAIDU_OCR_API_KEY=... BAIDU_OCR_SECRET_KEY=...
+# https://console.bce.baidu.com/ai/
+baidu:
+  ocr:
+    enabled: ${BAIDU_OCR_ENABLED:false}
+    api-key: ${BAIDU_OCR_API_KEY:}
+    secret-key: ${BAIDU_OCR_SECRET_KEY:}
 
 # JWT配置
 jwt:

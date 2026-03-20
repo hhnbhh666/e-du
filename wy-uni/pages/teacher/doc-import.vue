@@ -33,7 +33,7 @@
 						<view class="loading-dot"></view>
 					</view>
 					<text class="loading-text">正在识别试卷内容...</text>
-					<text class="loading-desc">使用百度OCR智能识别技术</text>
+					<text class="loading-desc">上传至服务器并调用百度 OCR 识别</text>
 				</view>
 			</view>
 
@@ -52,6 +52,11 @@
 				<view class="original-image">
 					<text class="image-label">原始图片</text>
 					<image :src="uploadedImage" mode="aspectFit" class="preview-img"></image>
+				</view>
+
+				<view class="raw-text" v-if="recognitionResult.rawText">
+					<text class="raw-label">OCR 原文（可对照修改）</text>
+					<text class="raw-content">{{ recognitionResult.rawText }}</text>
 				</view>
 
 				<view class="questions-list">
@@ -139,22 +144,8 @@ export default {
 			uploadedImage: '',
 			recognitionResult: null,
 			createPaper: false,
-			ocrHistory: [
-				{
-					date: '2024-01-15 14:30',
-					image: 'https://picsum.photos/200/280?random=1',
-					count: 5,
-					status: 'success',
-					statusText: '已导入'
-				},
-				{
-					date: '2024-01-14 10:20',
-					image: 'https://picsum.photos/200/280?random=2',
-					count: 3,
-					status: 'pending',
-					statusText: '待审核'
-				}
-			]
+			// 识别历史可后续接后端 ocr_records
+			ocrHistory: []
 		}
 	},
 	methods: {
@@ -179,48 +170,32 @@ export default {
 				}
 			})
 		},
-		startRecognize() {
+		async startRecognize() {
 			this.isRecognizing = true
-			// 模拟OCR识别
-			setTimeout(() => {
-				this.isRecognizing = false
-				// 模拟识别结果
+			try {
+				const { teacherApi } = await import('@/api/index.js')
+				const data = await teacherApi.recognizePaper(this.uploadedImage)
 				this.recognitionResult = {
-					questions: [
-						{
-							content: '遇到图中情形可加速通过。',
-							options: [
-								{ letter: 'A', text: '正确' },
-								{ letter: 'B', text: '错误' }
-							],
-							correctAnswer: 1,
-							confidence: 0.95
-						},
-						{
-							content: '驾驶机动车在道路上违反道路交通安全法的行为，属于什么行为？',
-							options: [
-								{ letter: 'A', text: '违章行为' },
-								{ letter: 'B', text: '违法行为' },
-								{ letter: 'C', text: '过失行为' },
-								{ letter: 'D', text: '违规行为' }
-							],
-							correctAnswer: 1,
-							confidence: 0.88
-						},
-						{
-							content: '机动车驾驶人初次申领驾驶证后的实习期是多长时间？',
-							options: [
-								{ letter: 'A', text: '6个月' },
-								{ letter: 'B', text: '12个月' },
-								{ letter: 'C', text: '16个月' },
-								{ letter: 'D', text: '18个月' }
-							],
-							correctAnswer: 1,
-							confidence: 0.72 // 低置信度示例
-						}
-					]
+					rawText: data.rawText || '',
+					questions: (data.questions || []).map((q) => ({
+						content: q.content || '',
+						options: (q.options || []).map((o) => ({
+							letter: o.letter,
+							text: o.text || ''
+						})),
+						correctAnswer: q.correctAnswer != null ? q.correctAnswer : 0,
+						confidence: q.confidence != null ? q.confidence : 0.55
+					}))
 				}
-			}, 2000)
+				if (!this.recognitionResult.questions.length) {
+					uni.showToast({ title: '未识别到题目，请检查图片或 OCR 配置', icon: 'none' })
+				}
+			} catch (e) {
+				// teacherApi 已 toast；未配置百度 key 时后端会返回明确错误
+				this.recognitionResult = null
+			} finally {
+				this.isRecognizing = false
+			}
 		},
 		reupload() {
 			this.recognitionResult = null
@@ -240,29 +215,57 @@ export default {
 		setCorrectAnswer(questionIndex, optionIndex) {
 			this.recognitionResult.questions[questionIndex].correctAnswer = optionIndex
 		},
-		confirmImport() {
-			const count = this.recognitionResult.questions.length
-			let message = `成功导入 ${count} 道题目`
-			if (this.createPaper) {
-				message += '\n\n是否要为这些题目创建试卷？'
+		async confirmImport() {
+			const questions = this.recognitionResult.questions
+			if (!questions.length) {
+				uni.showToast({ title: '没有可导入的题目', icon: 'none' })
+				return
 			}
-			
-			uni.showModal({
-				title: '导入成功',
-				content: message,
-				success: (res) => {
-					if (res.confirm) {
-						if (this.createPaper) {
-							// 跳转到创建试卷页面
-							uni.navigateTo({
-								url: '/pages/teacher/create-paper?questions=' + encodeURIComponent(JSON.stringify(this.recognitionResult.questions))
-							})
-						} else {
-							uni.navigateBack()
-						}
-					}
+			const { teacherApi } = await import('@/api/index.js')
+			uni.showLoading({ title: '导入中...' })
+			let ok = 0
+			let fail = 0
+			for (const q of questions) {
+				try {
+					await teacherApi.createQuestion({
+						content: q.content,
+						imageUrl: null,
+						videoUrl: null,
+						type: 1,
+						categoryId: 2,
+						difficulty: 2,
+						options: q.options.map((opt) => ({
+							letter: opt.letter,
+							content: opt.text
+						})),
+						correctAnswer: q.correctAnswer,
+						tip: null,
+						explanation: null
+					})
+					ok++
+				} catch (e) {
+					fail++
 				}
-			})
+			}
+			uni.hideLoading()
+			if (fail) {
+				uni.showModal({
+					title: '导入完成',
+					content: `成功 ${ok} 道，失败 ${fail} 道。请检查题目内容或网络后重试。`,
+					showCancel: false
+				})
+				return
+			}
+			uni.showToast({ title: `已导入 ${ok} 道题`, icon: 'success' })
+			if (this.createPaper && ok > 0) {
+				setTimeout(() => {
+					uni.navigateTo({
+						url: '/pages/teacher/create-paper?questions=' + encodeURIComponent(JSON.stringify(questions))
+					})
+				}, 400)
+				return
+			}
+			setTimeout(() => uni.navigateBack(), 600)
 		},
 		viewHistory(item) {
 			uni.showToast({ title: '查看历史记录', icon: 'none' })
@@ -470,6 +473,29 @@ export default {
 	width: 100%;
 	height: 400rpx;
 	border-radius: 12rpx;
+}
+
+.raw-text {
+	background-color: #fff;
+	border-radius: 16rpx;
+	padding: 20rpx;
+	margin-bottom: 30rpx;
+}
+
+.raw-label {
+	font-size: 28rpx;
+	font-weight: bold;
+	color: #333;
+	display: block;
+	margin-bottom: 12rpx;
+}
+
+.raw-content {
+	font-size: 24rpx;
+	color: #666;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-break: break-all;
 }
 
 .questions-list {

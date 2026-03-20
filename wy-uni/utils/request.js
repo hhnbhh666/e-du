@@ -2,7 +2,8 @@
  * 请求封装 - 开发环境无需登录验证
  */
 
-const BASE_URL = 'http://localhost:8080/api';
+export const API_BASE_URL = 'http://localhost:8080/api';
+const BASE_URL = API_BASE_URL;
 
 // 统一请求封装
 const request = (options) => {

@@ -133,11 +133,24 @@ java -jar target/wy-spring-0.0.1-SNAPSHOT.jar
 | 8xxx  | OCR错误 |
 | 9xxx  | 系统错误 |
 
+## 百度 OCR（试卷扫描识别）
+
+仓库内 `application.yml` 使用**环境变量**占位，避免密钥进 Git。在 [百度智能云](https://console.bce.baidu.com/ai/) 创建应用后，本地启动前设置（PowerShell 示例）：
+
+```powershell
+$env:BAIDU_OCR_ENABLED="true"
+$env:BAIDU_OCR_API_KEY="你的 API Key"
+$env:BAIDU_OCR_SECRET_KEY="你的 Secret Key"
+mvn spring-boot:run
+```
+
+未启用或未配置时，`POST /api/v1/teacher/ocr/recognize` 会返回明确错误提示；启用后由服务端调用百度「通用文字识别」再按版式拆题（需人工校对）。
+
 ## 下一步开发计划
 
 1. 实现课程模块接口
 2. 实现评论模块接口
 3. 实现老师端题目管理接口
 4. 实现试卷管理接口
-5. 实现OCR识别接口
+5. ~~实现OCR识别接口~~（已接入百度通用 OCR + 拆题）
 6. 添加文件上传功能

@@ -15,6 +15,13 @@
 			}
 		},
 		{
+			"path": "pages/teacher/teacher-manage",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "题目与试卷"
+			}
+		},
+		{
 			"path": "pages/teacher/add-question",
 			"style": {
 				"navigationStyle": "custom",

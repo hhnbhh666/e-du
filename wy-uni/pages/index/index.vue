@@ -337,6 +337,8 @@
 			return {
 				activeTab: 0,
 				activeBottomTab: 0,
+				/** 老师：底部「找课」进入题目与试卷工作台；后续可改为登录态 role */
+				isTeacher: true,
 				categorySticky: false,
 				tabs: ['推荐', '公开课', '精品课', '演讲', '纪录片'],
 				bottomTabs: [
@@ -669,6 +671,11 @@
 			switchBottomTab(index) {
 				if (this.activeBottomTab === index) return
 				this.activeBottomTab = index
+				// 老师：「找课」→ 题目与试卷工作台（与刷题页老师入口一致）
+				if (index === 1 && this.isTeacher) {
+					uni.reLaunch({ url: '/pages/teacher/teacher-manage' })
+					return
+				}
 				const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/index/index', '/pages/index/index']
 				uni.reLaunch({ url: routes[index] })
 			},

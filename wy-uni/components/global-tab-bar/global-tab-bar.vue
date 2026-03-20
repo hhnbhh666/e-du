@@ -24,7 +24,7 @@ export default {
 		return {
 			tabs: [
 				{ name: '首页', icon: '🏠', badge: 0 },
-				{ name: '找课', icon: '📝', badge: 0 },
+				{ name: '新增', icon: '📝', badge: 0 },
 				{ name: '刷题', icon: '✏', badge: 0 },
 				{ name: '社区', icon: '💬', badge: 0 },
 				{ name: '我', icon: '👤', badge: 0 }
@@ -34,6 +34,12 @@ export default {
 	methods: {
 		onTab(index) {
 			if (this.current === index) return
+			// 与首页/刷题内联底栏一致：老师「找课」→ teacher-manage（可接登录态）
+			const isTeacher = true
+			if (index === 1 && isTeacher) {
+				uni.reLaunch({ url: '/pages/teacher/teacher-manage' })
+				return
+			}
 			const routes = [
 				'/pages/index/index',
 				'/pages/index/index',
