@@ -16,6 +16,21 @@ export const teacherApi = {
 	 * 上传试卷图片，服务端调用百度 OCR 识别并拆题
 	 * @param {string} filePath - uni.chooseImage 返回的临时路径
 	 */
+	/** 申请成为教师 */
+	apply: (data) => {
+		return api.post('/v1/teacher/apply', data);
+	},
+
+	/** 当前用户教师档案，未申请则 data 为 null */
+	getMyTeacherProfile: () => {
+		return api.get('/v1/teacher/me');
+	},
+
+	/** 更新本人教师资料 */
+	updateMyTeacherProfile: (data) => {
+		return api.put('/v1/teacher/me', data);
+	},
+
 	recognizePaper: (filePath) => {
 		return new Promise((resolve, reject) => {
 			uni.uploadFile({
@@ -47,4 +62,12 @@ export const teacherApi = {
 			});
 		});
 	}
+};
+
+/** 后台 — 教师审核与管理（需登录，建议管理端使用） */
+export const adminTeacherApi = {
+	page: (params) => api.get('/v1/admin/teachers', params),
+	detail: (id) => api.get(`/v1/admin/teachers/${id}`),
+	review: (id, data) => api.post(`/v1/admin/teachers/${id}/review`, data),
+	remove: (id) => api.delete(`/v1/admin/teachers/${id}`)
 };

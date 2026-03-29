@@ -8,6 +8,28 @@
 			}
 		},
 		{
+			"path": "pages/login/login",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "登录"
+			}
+		},
+		{
+			"path": "pages/tutor/tutor-pool",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "教员库"
+			}
+		},
+		{
+			"path": "pages/map/map",
+			"style": {
+				"navigationBarTitleText": "地图",
+				"navigationBarBackgroundColor": "#ffffff",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/quiz/quiz",
 			"style": {
 				"navigationStyle": "custom",

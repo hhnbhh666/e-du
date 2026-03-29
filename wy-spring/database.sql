@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS `teachers` (
   `review_reason` VARCHAR(500) DEFAULT NULL COMMENT '审核拒绝原因',
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `is_deleted` TINYINT UNSIGNED DEFAULT 0 COMMENT '软删除：0正常 1删除',
 
   UNIQUE KEY `uk_user_id` (`user_id`),
   KEY `idx_status` (`status`)

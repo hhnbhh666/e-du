@@ -137,7 +137,9 @@
 </template>
 
 <script>
-export default {
+	import { teacherApi } from '@/api/index.js'
+
+	export default {
 	data() {
 		return {
 			isRecognizing: false,
@@ -173,7 +175,6 @@ export default {
 		async startRecognize() {
 			this.isRecognizing = true
 			try {
-				const { teacherApi } = await import('@/api/index.js')
 				const data = await teacherApi.recognizePaper(this.uploadedImage)
 				this.recognitionResult = {
 					rawText: data.rawText || '',
@@ -221,7 +222,6 @@ export default {
 				uni.showToast({ title: '没有可导入的题目', icon: 'none' })
 				return
 			}
-			const { teacherApi } = await import('@/api/index.js')
 			uni.showLoading({ title: '导入中...' })
 			let ok = 0
 			let fail = 0

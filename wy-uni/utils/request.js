@@ -7,15 +7,20 @@ const BASE_URL = API_BASE_URL;
 
 // 统一请求封装
 const request = (options) => {
+	const token = uni.getStorageSync('token');
+	const headers = {
+		'Content-Type': 'application/json',
+		...options.header
+	};
+	if (token) {
+		headers.Authorization = 'Bearer ' + token;
+	}
 	return new Promise((resolve, reject) => {
 		uni.request({
 			url: BASE_URL + options.url,
 			method: options.method || 'GET',
 			data: options.data,
-			header: {
-				'Content-Type': 'application/json',
-				...options.header
-			},
+			header: headers,
 			success: (res) => {
 				if (res.statusCode === 200) {
 					if (res.data.code === 200) {

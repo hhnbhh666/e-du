@@ -1,0 +1,18 @@
+---
+description: 修改 wy-spring 后由助手自动重启本地 Spring Boot
+alwaysApply: true
+---
+
+# 后端（wy-spring）改动后重启
+
+当你在**同一次回复中**修改了 `wy-spring/` 下任意文件（含 `.java`、`application.yml`、`pom.xml`、`mapper` 等），在结束回复**之前**须**自动重启**本地后端，除非用户明确说不要重启或本次仅改文档/注释且无需验证。
+
+**做法（Windows，项目惯例端口 8080）：**
+
+1. 查占用 8080 的 PID：`netstat -ano | findstr :8080`，对 `LISTENING` 那一行的最后一列 PID 执行 `Stop-Process -Id <PID> -Force`（可省略已不在监听的 PID）。
+2. 在后台启动：`cd wy-spring` 后执行 `mvn spring-boot:run`（长时间运行，用后台任务）。
+3. 可选：直接运行 `wy-spring/restart-backend.ps1`（前台阻塞；若需后台则由助手用 `Start-Process` 或 Cursor 后台 shell 跑 `mvn spring-boot:run`）。
+
+**与 DevTools 的关系：** 工程已依赖 `spring-boot-devtools`。若后端**已在跑**且 IDE/`mvn compile` 已把变更编译进 `target/classes`，进程可能已自动热重启；**仍应在改动 pom、部分配置或不确定是否触发热重启时**，按上面步骤做一次完整重启，并可用 `http://localhost:8080/v3/api-docs` 简单确认服务起来。
+
+**不要**在仅修改 `wy-uni` 或其它目录时无故重启后端。

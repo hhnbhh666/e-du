@@ -25,11 +25,18 @@ public enum ErrorCode {
     USER_TOKEN_INVALID(2006, "登录状态无效"),
     USER_FORBIDDEN(2007, "用户已被禁用"),
     USER_PHONE_EXISTS(2008, "手机号已注册"),
+    SMS_SEND_TOO_FAST(2009, "发送过于频繁，请稍后再试"),
+    SMS_DAY_LIMIT(2010, "今日获取验证码次数已达上限"),
+    SMS_CODE_INVALID(2011, "验证码错误或已过期"),
+    SMS_GATE_INVALID(2012, "请先完成安全验证"),
+    SLIDE_CAPTCHA_INVALID(2013, "安全验证未通过"),
+    SLIDE_CAPTCHA_EXPIRED(2014, "验证已过期，请重试"),
 
     // 教师错误 3xxx
     TEACHER_NOT_FOUND(3001, "教师不存在"),
     TEACHER_NOT_APPROVED(3002, "教师资质未通过审核"),
     TEACHER_ALREADY_APPLIED(3003, "已提交教师认证申请"),
+    TEACHER_REVIEW_INVALID(3004, "当前状态不可审核"),
 
     // 课程错误 4xxx
     COURSE_NOT_FOUND(4001, "课程不存在"),

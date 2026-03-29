@@ -17,19 +17,19 @@ public class InterceptorConfig implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        // 开发环境：禁用JWT拦截器，所有接口直接访问
-        // 生产环境时取消注释下面的代码启用验证
-        /*
+        // 仅解析 JWT 写入 request，不强制登录；无 token 的接口照常访问
         registry.addInterceptor(jwtInterceptor)
                 .addPathPatterns("/api/**")
                 .excludePathPatterns(
-                        "/api/auth/**",
-                        "/api/courses/**",
-                        "/api/questions/**",
-                        "/api/categories/**",
+                        "/api/auth/register",
+                        "/api/auth/login",
+                        "/api/auth/slide/start",
+                        "/api/auth/slide/verify",
+                        "/api/auth/sms/send",
+                        "/api/auth/sms/login",
+                        "/v3/api-docs/**",
                         "/swagger-ui/**",
-                        "/v3/api-docs/**"
+                        "/swagger-ui.html"
                 );
-        */
     }
 }

@@ -88,30 +88,20 @@
 				</view>
 			</view>
 
-			<!-- 技巧提示 -->
-			<view class="tip-section" v-if="hasAnswered">
-				<view class="tip-header">
-					<text class="tip-title">本题技巧</text>
-					<text class="tip-apply">适用于2道题 ></text>
-				</view>
-				<view class="tip-content">
-					<text class="tip-text">{{currentQuestion.tip}}</text>
-					<text class="view-full-tip" @click="viewFullTip">查看完整技巧 >></text>
-				</view>
-			</view>
-
-			<!-- 试题详解 -->
+			<!-- 试题详解：直接展示文字解析 -->
 			<view class="explanation-section" v-if="hasAnswered">
 				<view class="section-divider">
 					<text class="divider-line"></text>
 					<text class="section-title">试题详解</text>
 					<text class="divider-line"></text>
 				</view>
-				
 				<view class="explanation-content">
+					<text class="explanation-text">{{ currentQuestion.explanation || '暂无解析' }}</text>
+				</view>
+				<view class="explanation-video-block" v-if="videoCoverSrc">
 					<text class="explanation-title">视频讲解</text>
 					<view class="video-player" @click="playVideo">
-						<image :src="currentQuestion.videoThumb" mode="aspectFit"></image>
+						<image :src="videoCoverSrc" mode="aspectFill"></image>
 						<view class="play-button">
 							<text class="play-icon">▶</text>
 						</view>
@@ -203,7 +193,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { questionApi } from '@/api/index.js'
 
@@ -260,6 +250,14 @@ const currentQuestion = ref({
   correctAnswer: 2,
   tip: '先减后加，注意顺序。',
   explanation: '12 - 3 = 9（个），9 + 5 = 14（个）。现在一共有 14 个苹果。'
+})
+
+/** 视频封面：兼容 videoThumb / videoUrl，避免 uni-app 下 image 高度塌陷不显示 */
+const videoCoverSrc = computed(() => {
+  const q = currentQuestion.value
+  if (!q) return ''
+  const s = (q.videoThumb || q.videoUrl || '').trim()
+  return s
 })
 
 // 默认示例评论（中小学学习场景）
@@ -425,14 +423,6 @@ async function selectOption(index) {
   } finally {
     uni.hideLoading()
   }
-}
-
-function viewFullTip() {
-  uni.showModal({
-    title: '完整技巧',
-    content: currentQuestion.value.explanation,
-    showCancel: false
-  })
 }
 
 function playVideo() {
@@ -809,51 +799,6 @@ function goToNextQuestion() {
 		color: #ff4444;
 	}
 
-	/* 技巧提示 */
-	.tip-section {
-		background-color: #fff;
-		padding: 30rpx;
-		border-radius: 16rpx;
-		margin-bottom: 30rpx;
-	}
-
-	.tip-header {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		margin-bottom: 20rpx;
-	}
-
-	.tip-title {
-		font-size: 28rpx;
-		font-weight: bold;
-		color: #333;
-	}
-
-	.tip-apply {
-		font-size: 24rpx;
-		color: #999;
-	}
-
-	.tip-content {
-		display: flex;
-		justify-content: space-between;
-		align-items: center;
-	}
-
-	.tip-text {
-		font-size: 28rpx;
-		color: #666;
-	}
-
-	.view-full-tip {
-		font-size: 26rpx;
-		color: #ff8c42;
-		background-color: #fff5e6;
-		padding: 10rpx 20rpx;
-		border-radius: 30rpx;
-	}
-
 	/* 试题详解 */
 	.explanation-section {
 		background-color: #fff;
@@ -881,6 +826,23 @@ function goToNextQuestion() {
 		padding: 0 20rpx;
 	}
 
+	.explanation-content {
+		margin-bottom: 24rpx;
+	}
+
+	.explanation-text {
+		font-size: 28rpx;
+		color: #333;
+		line-height: 1.65;
+		white-space: pre-wrap;
+		word-break: break-word;
+		display: block;
+	}
+
+	.explanation-video-block {
+		margin-top: 10rpx;
+	}
+
 	.explanation-title {
 		font-size: 28rpx;
 		color: #333;
@@ -894,11 +856,13 @@ function goToNextQuestion() {
 		height: 340rpx;
 		border-radius: 16rpx;
 		overflow: hidden;
+		background-color: #000;
 	}
 
 	.video-player image {
 		width: 100%;
 		height: 100%;
+		display: block;
 	}
 
 	.play-button {

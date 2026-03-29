@@ -41,7 +41,13 @@ org.example.wy
 - JDK 1.8+
 - Maven 3.6+
 - MySQL 8.0+
-- Redis 6.0+
+- Redis 6.0+（**须先启动**，短信验证码、滑动校验令牌、频控都依赖 Redis；未启动会报 Redis 相关错误或「系统内部错误」）
+
+**本地启动 Redis 示例**
+
+- Windows：安装后执行 `redis-server`（或对应服务的「启动」）。
+- Docker：`docker run -d --name wy-redis -p 6379:6379 redis:7`
+- 密码与 `application.yml` 中 `spring.redis.password`（可用环境变量 `REDIS_PASSWORD`）保持一致；本地无密码时不要配置 `requirepass`。
 
 ### 2. 数据库初始化
 
@@ -67,7 +73,7 @@ spring:
   redis:
     host: localhost
     port: 6379
-    password: your_password
+    password: ${REDIS_PASSWORD:}   # 无密码留空；有密码用环境变量注入
 
 jwt:
   secret: your-secret-key
@@ -95,6 +101,10 @@ java -jar target/wy-spring-0.0.1-SNAPSHOT.jar
 ### 认证接口
 - `POST /api/auth/register` - 用户注册
 - `POST /api/auth/login` - 用户登录
+- `POST /api/auth/slide/start` - 滑动验证开始，返回 `slideId`
+- `POST /api/auth/slide/verify` - 滑动完成， body: `slideId`, `durationMs`, `progress`(0–100)，返回一次性 `gateToken`
+- `POST /api/auth/sms/send` - 发送登录短信，body: `phone`, `gateToken`（需 Redis；`app.sms.mock-enabled=true` 时验证码仅打日志）
+- `POST /api/auth/sms/login` - 短信登录，新用户自动注册
 - `GET /api/auth/me` - 获取当前用户信息
 
 ### 刷题接口
@@ -106,7 +116,23 @@ java -jar target/wy-spring-0.0.1-SNAPSHOT.jar
 ### 分类接口
 - `GET /api/categories` - 获取分类列表
 
+### 教师管理（需 `Authorization: Bearer <token>`）
+**老师端**
+- `POST /api/v1/teacher/apply` - 申请成为教师；`body`: `name`, `title?`, `introduction?`, `subjects?`, `avatar?`, `credentials?`
+- `GET /api/v1/teacher/me` - 当前用户教师档案（未申请则 `data` 为 `null`）
+- `PUT /api/v1/teacher/me` - 更新本人资料（待审核/已通过；已拒绝需重新 `apply`）
+
+**后台审核**
+- `GET /api/v1/admin/teachers` - 分页列表，`query`: `page`, `size`, `status?`(0/1/2), `keyword?`（姓名或手机号）
+- `GET /api/v1/admin/teachers/{id}` - 详情
+- `POST /api/v1/admin/teachers/{id}/review` - 审核，`body`: `{ "approve": true/false, "reviewReason": "拒绝时填写" }`（仅待审核）
+- `DELETE /api/v1/admin/teachers/{id}` - 逻辑删除
+
+若库中 `teachers` 表无 `is_deleted` 字段，执行 `database-migration-teachers-is-deleted.sql`。
+
 ## 开发规范
+
+仓库级约定（前端 uni-app、Git、协作等）见 **[../docs/CODING-STANDARDS.md](../docs/CODING-STANDARDS.md)**。本节仅列本服务 API 约定。
 
 ### 响应格式
 

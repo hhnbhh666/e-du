@@ -162,7 +162,9 @@
 </template>
 
 <script>
-export default {
+	import { teacherApi } from '@/api/index.js'
+
+	export default {
 	data() {
 		return {
 			question: {
@@ -324,7 +326,6 @@ export default {
 			// 调用后端接口保存题目
 			uni.showLoading({ title: '保存中...' })
 			try {
-				const { teacherApi } = await import('@/api/index.js')
 				const options = this.question.options.map(opt => ({
 					letter: opt.letter,
 					content: opt.text

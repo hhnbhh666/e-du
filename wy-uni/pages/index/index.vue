@@ -12,6 +12,16 @@
 				</view>
 			</view>
 
+			<!-- 定位 + 全屏地图入口 -->
+			<view class="location-bar">
+				<view class="location-main" @click="onTapGetLocation">
+					<text class="loc-icon">📍</text>
+					<text class="loc-text">{{ locationBrief }}</text>
+				</view>
+				<text class="loc-map-link" @click.stop="goMap">地图</text>
+				<text class="loc-map-link login-link" @click.stop="goLogin">登录</text>
+			</view>
+
 			<!-- 搜索栏 -->
 			<view class="search-header">
 				<view class="check-in-btn">
@@ -47,11 +57,13 @@
 		</view>
 
 		<!-- 页面内容区域 - 使用swiper实现切换 -->
+		<!-- PC/H5 嵌套横向 swiper（九宫格等）会抢手势，外层禁用触摸滑动，仅通过顶部分类标签切换 -->
 		<swiper 
 			class="content-swiper" 
 			:current="activeTab" 
 			@change="onSwiperChange"
 			:duration="300"
+			:disable-touch="true"
 		>
 			<!-- 推荐页面 -->
 			<swiper-item>
@@ -120,6 +132,18 @@
 							</scroll-view>
 						</view>
 
+						<!-- 家教：选教员（高校等条件筛选） -->
+						<view class="tutor-entry-section" @click="goTutorPool">
+							<view class="tutor-entry-inner">
+								<text class="tutor-entry-icon">👨‍🏫</text>
+								<view class="tutor-entry-texts">
+									<text class="tutor-entry-title">家教 · 选老师</text>
+									<text class="tutor-entry-desc">科目、老师类型、高校关键词筛选</text>
+								</view>
+								<text class="tutor-entry-arrow">›</text>
+							</view>
+						</view>
+
 						<!-- 排行榜轮播（精品好课、最多收藏、热播好课） -->
 						<view class="ranking-carousel-section">
 							<view class="section-header" @click="goToMore('课程排行榜')">
@@ -183,7 +207,9 @@
 										<view class="nine-grid">
 											<view class="grid-row" v-for="(row, rIndex) in page.rows" :key="rIndex">
 												<view class="grid-item" v-for="(item, iIndex) in row" :key="iIndex">
-													<image class="grid-image" :src="item.image" mode="aspectFill"></image>
+													<view class="grid-image-wrap">
+														<image class="grid-image" :src="item.image" mode="aspectFill"></image>
+													</view>
 													<text class="grid-title">{{item.title}}</text>
 												</view>
 											</view>
@@ -331,10 +357,15 @@
 
 <script>
 	import { categoryApi } from '@/api/index.js'
+	import { getUserLocation, saveLocationCache } from '@/utils/location.js'
 
 	export default {
 		data() {
 			return {
+				/** 定位展示文案 */
+				locationBrief: '点击获取位置信息',
+				userLatitude: null,
+				userLongitude: null,
 				activeTab: 0,
 				activeBottomTab: 0,
 				/** 老师：底部「找课」进入题目与试卷工作台；后续可改为登录态 role */
@@ -706,6 +737,44 @@
 			goToQuiz(categoryId) {
 				const url = categoryId ? `/pages/quiz/quiz?categoryId=${categoryId}` : '/pages/quiz/quiz'
 				uni.navigateTo({ url })
+			},
+			goTutorPool() {
+				uni.navigateTo({ url: '/pages/tutor/tutor-pool' })
+			},
+			async onTapGetLocation() {
+				try {
+					uni.showLoading({ title: '定位中...' })
+					const loc = await getUserLocation({
+						showConfirm: true,
+						confirmContent: '应用需要访问您的位置以提供更好的服务，例如查找距离您更近的课程与内容。'
+					})
+					this.userLatitude = loc.latitude
+					this.userLongitude = loc.longitude
+					saveLocationCache(loc.latitude, loc.longitude)
+					this.locationBrief = `${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)}`
+					uni.showToast({ title: '已获取位置', icon: 'success' })
+				} catch (e) {
+					if (e && e.code === 'CANCEL') {
+						// 用户点取消
+					} else {
+						uni.showToast({
+							title: (e && e.errMsg) ? String(e.errMsg).slice(0, 40) : '定位失败，请检查权限与网络',
+							icon: 'none'
+						})
+					}
+				} finally {
+					uni.hideLoading()
+				}
+			},
+			goMap() {
+				let url = '/pages/map/map'
+				if (this.userLatitude != null && this.userLongitude != null) {
+					url += `?lat=${this.userLatitude}&lng=${this.userLongitude}`
+				}
+				uni.navigateTo({ url })
+			},
+			goLogin() {
+				uni.navigateTo({ url: '/pages/login/login' })
 			}
 		}
 	}
@@ -748,6 +817,48 @@
 
 	.icon {
 		font-size: 24rpx;
+	}
+
+	.location-bar {
+		display: flex;
+		align-items: center;
+		padding: 12rpx 30rpx 0;
+		background-color: #fff;
+	}
+
+	.location-main {
+		display: flex;
+		align-items: center;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.loc-icon {
+		font-size: 28rpx;
+		margin-right: 10rpx;
+	}
+
+	.loc-text {
+		font-size: 24rpx;
+		color: #1890ff;
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.loc-map-link {
+		font-size: 26rpx;
+		color: #333;
+		padding: 8rpx 20rpx;
+		background: #f0f0f0;
+		border-radius: 24rpx;
+		flex-shrink: 0;
+		margin-left: 16rpx;
+	}
+
+	.login-link {
+		margin-left: 12rpx;
 	}
 
 	/* 搜索栏 */
@@ -1174,10 +1285,12 @@
 		color: #00a854;
 	}
 
-	/* 九宫格swiper */
+	/* 九宫格 swiper：必须给明确高度，uni-app 里 height:auto 会导致整块空白 */
 	.nine-grid-swiper {
-		height: 600rpx;
 		margin-top: 20rpx;
+		height: 620rpx;
+		touch-action: pan-x;
+		isolation: isolate;
 	}
 
 	/* 九宫格布局 */
@@ -1206,11 +1319,30 @@
 		width: calc(33.33% - 14rpx);
 	}
 
+	/* image 用固定高度更稳；外层 view 做 16:9 占位避免小屏/大屏比例失调 */
+	.grid-image-wrap {
+		width: 100%;
+		border-radius: 12rpx;
+		overflow: hidden;
+		margin-bottom: 10rpx;
+	}
+
 	.grid-image {
 		width: 100%;
-		height: 140rpx;
+		height: 160rpx;
+		display: block;
 		border-radius: 12rpx;
-		margin-bottom: 10rpx;
+	}
+
+	@media screen and (min-width: 768px) {
+		.nine-grid-swiper {
+			height: 44vw;
+			max-height: 720px;
+		}
+		.grid-image {
+			height: 180px;
+			max-height: 220px;
+		}
 	}
 
 	.grid-title {
@@ -1269,6 +1401,44 @@
 	.quiz-cat-name {
 		font-size: 24rpx;
 		color: #333;
+	}
+
+	.tutor-entry-section {
+		background-color: #fff;
+		margin: 0 20rpx 20rpx;
+		border-radius: 16rpx;
+		overflow: hidden;
+		border: 1rpx solid #ffe4cc;
+	}
+	.tutor-entry-inner {
+		display: flex;
+		align-items: center;
+		padding: 24rpx 28rpx;
+		background: linear-gradient(90deg, #fff8f2 0%, #fff 100%);
+	}
+	.tutor-entry-icon {
+		font-size: 48rpx;
+		margin-right: 20rpx;
+	}
+	.tutor-entry-texts {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		gap: 6rpx;
+	}
+	.tutor-entry-title {
+		font-size: 30rpx;
+		font-weight: bold;
+		color: #ff6b00;
+	}
+	.tutor-entry-desc {
+		font-size: 24rpx;
+		color: #999;
+	}
+	.tutor-entry-arrow {
+		font-size: 40rpx;
+		color: #ff6b00;
+		font-weight: bold;
 	}
 
 	.ranking-swiper {

@@ -1,5 +1,7 @@
 .idea/
 .vscode/
 
-# 本地/团队代码规范，不纳入版本库
-Coding-Standards.md
+# 前端依赖（仓库根 `npm install` 或 wy-uni 内安装均可）
+node_modules/
+
+# 仓库规范见 docs/CODING-STANDARDS.md

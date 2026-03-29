@@ -1,0 +1,26 @@
+{
+	"name": "wy-uni",
+	"version": "1.0.0",
+	"private": true,
+	"description": "uni-app Vue3 + HBuilderX（@dcloudio 必须锁版本，勿加 ^）",
+	"scripts": {
+		"verify:uts": "node scripts/verify-uts.mjs"
+	},
+	"dependencies": {
+		"vue": "3.4.21"
+	},
+	"devDependencies": {
+		"@dcloudio/uni-cli-shared": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/uni-uts-v1": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/vite-plugin-uni": "3.0.0-alpha-4080320251016001",
+		"vite": "5.2.8"
+	},
+	"overrides": {
+		"@dcloudio/uni-uts-v1": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/vite-plugin-uni": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/uni-cli-shared": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/uni-shared": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/uni-nvue-styler": "3.0.0-alpha-4080320251016001",
+		"@dcloudio/uts": "3.0.0-alpha-4080320251016001"
+	}
+}

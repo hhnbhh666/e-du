@@ -42,6 +42,14 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
 
+        <!-- 开发：classpath 变更时自动重启（需触发编译，如 IDE Build 或 mvn compile） -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-devtools</artifactId>
+            <scope>runtime</scope>
+            <optional>true</optional>
+        </dependency>
+
         <!-- MyBatis-Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>

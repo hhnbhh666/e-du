@@ -26,5 +26,25 @@ export const authApi = {
 	 */
 	getCurrentUser: () => {
 		return api.get('/auth/me');
+	},
+
+	/** 滑动验证：开始，返回 { slideId } */
+	slideStart: () => {
+		return api.post('/auth/slide/start', {});
+	},
+
+	/** 滑动验证：完成，返回 { gateToken } */
+	slideVerify: (data) => {
+		return api.post('/auth/slide/verify', data);
+	},
+
+	/** 发送登录短信（需先 slide 拿到 gateToken） */
+	sendSmsCode: (data) => {
+		return api.post('/auth/sms/send', data);
+	},
+
+	/** 短信登录 / 自动注册 */
+	smsLogin: (data) => {
+		return api.post('/auth/sms/login', data);
 	}
 };

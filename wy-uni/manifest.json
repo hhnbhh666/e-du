@@ -16,8 +16,10 @@
             "autoclose" : true,
             "delay" : 0
         },
-        /* 模块配置 */
-        "modules" : {},
+        /* 模块配置：地图（App 真机/模拟器显示原生地图） */
+        "modules" : {
+            "Maps" : {}
+        },
         /* 应用发布信息 */
         "distribute" : {
             /* android打包配置 */
@@ -37,24 +39,49 @@
                     "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>",
                     "<uses-permission android:name=\"android.permission.FLASHLIGHT\"/>",
                     "<uses-feature android:name=\"android.hardware.camera\"/>",
-                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>"
+                    "<uses-permission android:name=\"android.permission.WRITE_SETTINGS\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_COARSE_LOCATION\"/>",
+                    "<uses-permission android:name=\"android.permission.ACCESS_FINE_LOCATION\"/>"
                 ]
             },
             /* ios打包配置 */
-            "ios" : {},
-            /* SDK配置 */
-            "sdkConfigs" : {}
+            "ios" : {
+                "privacyDescription" : {
+                    "NSLocationWhenInUseUsageDescription" : "用于推荐附近课程、距离排序等服务",
+                    "NSLocationAlwaysAndWhenInUseUsageDescription" : "用于推荐附近课程、距离排序等服务"
+                }
+            },
+            /* SDK配置：腾讯地图（App 打包/自定义调试基座生效；标准基座多为高德，用腾讯需按官方文档换自定义基座） */
+            "sdkConfigs" : {
+                "maps" : {
+                    /* HBuilderX 4.36+ */
+                    "tencent" : {
+                        "key" : "PRABZ-SMFCQ-E4V5L-24QXK-JOOSO-LEBLY"
+                    },
+                    /* 4.36 以下兼容项，与 tencent.key 一致即可 */
+                    "qqmap" : {
+                        "key" : "PRABZ-SMFCQ-E4V5L-24QXK-JOOSO-LEBLY"
+                    }
+                }
+            }
         }
     },
     /* 快应用特有相关 */
     "quickapp" : {},
     /* 小程序特有相关 */
+    /* 微信小程序 <map>：在 lbs.qq.com 创建「微信小程序」Key（你的 ekey），并把该 Key 绑定到下面的微信 appid；SecretKey 仅用于服务端，不要写进前端 */
     "mp-weixin" : {
         "appid" : "",
         "setting" : {
             "urlCheck" : false
         },
-        "usingComponents" : true
+        "usingComponents" : true,
+        "permission" : {
+            "scope.userLocation" : {
+                "desc" : "你的位置信息将用于推荐附近课程、距离排序等"
+            }
+        },
+        "requiredPrivateInfos" : [ "getLocation" ]
     },
     "mp-alipay" : {
         "usingComponents" : true
@@ -68,5 +95,21 @@
     "uniStatistics" : {
         "enable" : false
     },
-    "vueVersion" : "3"
+    "vueVersion" : "3",
+    "h5" : {
+        "router" : {
+            "mode" : "hash"
+        },
+        /* H5 使用 map/定位相关能力时需配置；与 App 可共用同一腾讯 Key（控制台须勾选 WebService/JS 等对应能力） */
+        "sdkConfigs" : {
+            "maps" : {
+                "tencent" : {
+                    "key" : "PRABZ-SMFCQ-E4V5L-24QXK-JOOSO-LEBLY"
+                },
+                "qqmap" : {
+                    "key" : "PRABZ-SMFCQ-E4V5L-24QXK-JOOSO-LEBLY"
+                }
+            }
+        }
+    }
 }
