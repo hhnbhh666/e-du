@@ -56,6 +56,27 @@
 				"navigationStyle": "custom",
 				"navigationBarTitleText": "文档导入"
 			}
+		},
+		{
+			"path": "pages/live/live-list",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "直播广场"
+			}
+		},
+		{
+			"path": "pages/live/live-room",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "直播间"
+			}
+		},
+		{
+			"path": "pages/live/anchor-live",
+			"style": {
+				"navigationStyle": "custom",
+				"navigationBarTitleText": "主播直播"
+			}
 		}
 	],
 	"globalStyle": {

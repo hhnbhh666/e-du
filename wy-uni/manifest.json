@@ -71,9 +71,13 @@
     /* 小程序特有相关 */
     /* 微信小程序 <map>：在 lbs.qq.com 创建「微信小程序」Key（你的 ekey），并把该 Key 绑定到下面的微信 appid；SecretKey 仅用于服务端，不要写进前端 */
     "mp-weixin" : {
-        "appid" : "",
+        "appid" : "touristappid",
         "setting" : {
-            "urlCheck" : false
+            "urlCheck" : false,
+            "es6" : true,
+            "enhance" : true,
+            "postcss" : true,
+            "minified" : true
         },
         "usingComponents" : true,
         "permission" : {

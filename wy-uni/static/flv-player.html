@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FLV 直播播放器</title>
+    <script src="https://cdn.jsdelivr.net/npm/flv.js@latest/dist/flv.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #000;
+            overflow: hidden;
+        }
+        video {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            background: #000;
+            object-fit: fill;
+        }
+        .error-msg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            text-align: center;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <video id="videoPlayer" controls autoplay muted></video>
+    <div class="error-msg" id="errorMsg" style="display:none;">
+        <h2>播放失败</h2>
+        <p id="errorDetail"></p>
+        <p style="margin-top:20px;font-size:14px;color:#ccc;">请确保：</p>
+        <ul style="text-align:left;display:inline-block;margin-top:10px;">
+            <li>SRS 流媒体服务器正在运行</li>
+            <li>OBS 正在推流到 rtmp://localhost/live/testroom123</li>
+        </ul>
+    </div>
+
+    <script>
+        const video = document.getElementById('videoPlayer');
+        const errorMsg = document.getElementById('errorMsg');
+        const errorDetail = document.getElementById('errorDetail');
+
+        const params = new URLSearchParams(window.location.search);
+        const streamUrl = params.get('url') || 'http://localhost:8081/live/testroom123.flv';
+
+        console.log('FLV 播放地址:', streamUrl);
+
+        if (flvjs.isSupported()) {
+            const flvPlayer = flvjs.createPlayer({
+                type: 'flv',
+                url: streamUrl,
+                isLive: true,
+                hasAudio: true,
+                hasVideo: true,
+                withCredentials: false
+            });
+
+            flvPlayer.attachMediaElement(video);
+            flvPlayer.load();
+
+            flvPlayer.on(flvjs.Events.ERROR, (errType, errDetail) => {
+                console.error('FLV 错误:', errType, errDetail);
+                
+                if (errType === 'network_error' || errType === 'media_error') {
+                    errorMsg.style.display = 'block';
+                    errorDetail.textContent = '错误类型: ' + errType + ' - ' + (errDetail || '未知错误');
+                    
+                    setTimeout(() => {
+                        console.log('尝试重新加载...');
+                        flvPlayer.load();
+                        flvPlayer.play();
+                    }, 3000);
+                }
+            });
+
+            flvPlayer.on(flvjs.Events.LOADING_COMPLETE, () => {
+                console.log('加载完成');
+            });
+
+            flvPlayer.on(flvjs.Events.RECOVERED_EARLY_EOF, () => {
+                console.log('EOF 恢复');
+            });
+
+            try {
+                video.play().then(() => {
+                    console.log('FLV 播放成功！');
+                }).catch(e => {
+                    console.log('自动播放失败，请点击播放按钮', e);
+                });
+            } catch (e) {
+                console.error('播放异常:', e);
+            }
+
+            window.addEventListener('beforeunload', () => {
+                flvPlayer.pause();
+                flvPlayer.unload();
+                flvPlayer.detachMediaElement();
+                flvPlayer.destroy();
+            });
+        } else {
+            errorMsg.style.display = 'block';
+            errorDetail.textContent = '您的浏览器不支持 FLV 播放，请使用 Chrome 或 Edge 浏览器';
+        }
+    </script>
+</body>
+</html>

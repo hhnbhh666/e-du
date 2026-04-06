@@ -33,7 +33,7 @@
 					<input class="search-input" type="text" placeholder="搜课程、找练习" />
 				</view>
 				<view class="header-right">
-					<view class="live-btn">
+					<view class="live-btn" @click="goLive">
 						<text class="live-tag">LIVE</text>
 						<text class="live-text">直播课</text>
 					</view>
@@ -376,7 +376,7 @@
 					{ name: '首页', icon: '🏠' },
 					{ name: '找课', icon: '📝' },
 					{ name: '刷题', icon: '✏' },
-					{ name: '社区', icon: '💬' },
+					{ name: '直播', icon: '📺' },
 					{ name: '我', icon: '👤' }
 				],
 
@@ -707,7 +707,7 @@
 					uni.reLaunch({ url: '/pages/teacher/teacher-manage' })
 					return
 				}
-				const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/index/index', '/pages/index/index']
+				const routes = ['/pages/index/index', '/pages/index/index', '/pages/quiz/quiz', '/pages/live/live-list', '/pages/index/index']
 				uni.reLaunch({ url: routes[index] })
 			},
 			onSwiperChange(e) {
@@ -740,6 +740,9 @@
 			},
 			goTutorPool() {
 				uni.navigateTo({ url: '/pages/tutor/tutor-pool' })
+			},
+			goLive() {
+				uni.navigateTo({ url: '/pages/live/live-list' })
 			},
 			async onTapGetLocation() {
 				try {

@@ -2,7 +2,19 @@
  * 请求封装 - 开发环境无需登录验证
  */
 
+// 根据平台和环境自动选择地址
+// #ifdef H5
+// H5 浏览器：使用本地地址
 export const API_BASE_URL = 'http://localhost:8080/api';
+// #endif
+// #ifdef APP-PLUS
+// APP 端：使用 ngrok 公网地址
+export const API_BASE_URL = 'https://emma-rockiest-positively.ngrok-free.dev/api';
+// #endif
+// #ifdef MP-WEIXIN
+// 微信小程序：使用 ngrok 公网地址
+export const API_BASE_URL = 'https://emma-rockiest-positively.ngrok-free.dev/api';
+// #endif
 const BASE_URL = API_BASE_URL;
 
 // 统一请求封装
@@ -10,6 +22,7 @@ const request = (options) => {
 	const token = uni.getStorageSync('token');
 	const headers = {
 		'Content-Type': 'application/json',
+		'ngrok-skip-browser-warning': 'true',
 		...options.header
 	};
 	if (token) {

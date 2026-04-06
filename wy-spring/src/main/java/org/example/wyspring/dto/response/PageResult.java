@@ -39,6 +39,14 @@ public class PageResult<T> {
     public PageResult() {
     }
 
+    public PageResult(List<T> list) {
+        this.list = list;
+        this.total = list != null ? (long) list.size() : 0L;
+        this.page = 1;
+        this.size = list != null ? list.size() : 0;
+        this.hasMore = false;
+    }
+
     public PageResult(List<T> list, Long total, Integer page, Integer size) {
         this.list = list;
         this.total = total;

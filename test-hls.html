@@ -1,0 +1,125 @@
+http://192.168.0.18:8081/live/testroom123.m3u8http://192.168.0.18:8081/live/testroom123.m3u8<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试 HLS 播放</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            background: #000;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .error {
+            color: #ff6b6b;
+        }
+        .success {
+            color: #51cf66;
+        }
+        .test-links {
+            margin-top: 20px;
+        }
+        .test-links a {
+            display: block;
+            color: #4dabf7;
+            margin: 10px 0;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📺 直播流测试</h1>
+        
+        <h2>HLS 测试 (.m3u8)</h2>
+        <video id="hlsVideo" controls autoplay muted></video>
+        
+        <h2>FLV 测试 (.flv)</h2>
+        <video id="flvVideo" controls autoplay muted></video>
+        
+        <div class="status" id="status"></div>
+        
+        <div class="test-links">
+            <h3>直接访问测试</h3>
+            <a href="http://192.168.0.18:8081/live/testroom123.m3u8" target="_blank">
+                📡 HLS 地址：http://192.168.0.18:8081/live/testroom123.m3u8
+            </a>
+            <a href="http://192.168.0.18:8081/live/testroom123.flv" target="_blank">
+                📡 FLV 地址：http://192.168.0.18:8081/live/testroom123.flv
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const statusDiv = document.getElementById('status');
+        
+        function log(message, type = 'normal') {
+            const p = document.createElement('p');
+            p.textContent = new Date().toLocaleTimeString() + ' - ' + message;
+            if (type === 'error') p.className = 'error';
+            if (type === 'success') p.className = 'success';
+            statusDiv.appendChild(p);
+        }
+
+        // 测试 HLS
+        const hlsVideo = document.getElementById('hlsVideo');
+        const hlsUrl = 'http://192.168.0.18:8081/live/testroom123.m3u8';
+        
+        log('开始测试 HLS: ' + hlsUrl);
+        
+        if (Hls.isSupported()) {
+            const hls = new Hls();
+            hls.loadSource(hlsUrl);
+            hls.attachMedia(hlsVideo);
+            
+            hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                log('HLS 解析成功！开始播放...', 'success');
+                hlsVideo.play();
+            });
+            
+            hls.on(Hls.Events.ERROR, function(event, data) {
+                log('HLS 错误：' + JSON.stringify(data), 'error');
+            });
+        } else if (hlsVideo.canPlayType('application/vnd.apple.mpegurl')) {
+            hlsVideo.src = hlsUrl;
+            hlsVideo.addEventListener('loadedmetadata', function() {
+                log('原生支持 HLS！开始播放...', 'success');
+                hlsVideo.play();
+            });
+        } else {
+            log('浏览器不支持 HLS', 'error');
+        }
+
+        // 测试 FLV（简单测试）
+        const flvVideo = document.getElementById('flvVideo');
+        const flvUrl = 'http://192.168.0.18:8081/live/testroom123.flv';
+        
+        log('开始测试 FLV: ' + flvUrl);
+        flvVideo.src = flvUrl;
+        flvVideo.addEventListener('play', function() {
+            log('FLV 开始播放！', 'success');
+        });
+        flvVideo.addEventListener('error', function() {
+            log('FLV 播放失败', 'error');
+        });
+    </script>
+</body>
+</html>

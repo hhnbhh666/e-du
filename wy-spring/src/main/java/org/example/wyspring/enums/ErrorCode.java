@@ -6,7 +6,7 @@ import lombok.Getter;
  * 错误码枚举
  */
 @Getter
-public enum ErrorCode {
+public enum ErrorCode implements ErrorCodeInterface {
 
     // 成功
     SUCCESS(200, "操作成功"),

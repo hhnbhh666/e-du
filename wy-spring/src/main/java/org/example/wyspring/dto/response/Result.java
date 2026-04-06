@@ -2,6 +2,7 @@ package org.example.wyspring.dto.response;
 
 import lombok.Data;
 import org.example.wyspring.enums.ErrorCode;
+import org.example.wyspring.enums.ErrorCodeInterface;
 
 /**
  * 统一响应结果
@@ -50,14 +51,14 @@ public class Result<T> {
     /**
      * 错误响应
      */
-    public static <T> Result<T> error(ErrorCode errorCode) {
+    public static <T> Result<T> error(ErrorCodeInterface errorCode) {
         return new Result<>(errorCode.getCode(), errorCode.getMessage(), null);
     }
 
     /**
      * 错误响应（自定义消息）
      */
-    public static <T> Result<T> error(ErrorCode errorCode, String message) {
+    public static <T> Result<T> error(ErrorCodeInterface errorCode, String message) {
         return new Result<>(errorCode.getCode(), message, null);
     }
 
@@ -72,6 +73,6 @@ public class Result<T> {
      * 判断是否成功
      */
     public boolean isSuccess() {
-        return this.code == ErrorCode.SUCCESS.getCode();
+        return this.code == 200;
     }
 }

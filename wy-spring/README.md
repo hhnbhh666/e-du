@@ -130,6 +130,65 @@ java -jar target/wy-spring-0.0.1-SNAPSHOT.jar
 
 若库中 `teachers` 表无 `is_deleted` 字段，执行 `database-migration-teachers-is-deleted.sql`。
 
+## 直播模块（Live）
+
+### 数据库初始化
+```bash
+# 导入直播模块数据库结构
+mysql -u root -p wy_edu < database-live.sql
+```
+
+### 直播间接口
+- `POST /api/live/room/create` - 创建直播间
+- `PUT /api/live/room/update` - 更新直播间信息
+- `POST /api/live/room/start` - 开始直播
+- `POST /api/live/room/stop` - 结束直播
+- `DELETE /api/live/room/{roomId}` - 删除直播间
+- `GET /api/live/room/{roomId}` - 获取直播间详情
+- `GET /api/live/room/anchor/current` - 获取当前用户的直播间
+- `GET /api/live/rooms/hot` - 获取热门直播间
+- `GET /api/live/rooms/latest` - 获取最新直播间
+- `GET /api/live/rooms/category/{categoryId}` - 获取指定分类的直播间
+- `POST /api/live/room/{roomId}/enter` - 进入直播间
+- `POST /api/live/room/{roomId}/leave` - 离开直播间
+- `POST /api/live/room/{roomId}/like` - 点赞直播间
+- `GET /api/live/room/{roomId}/stats` - 获取直播间统计
+
+### 弹幕接口
+- `POST /api/live/room/{roomId}/danmaku` - 发送弹幕
+- `GET /api/live/room/{roomId}/danmaku` - 获取最近弹幕
+
+### 直播商品接口（小黄车）
+- `POST /api/live/product/add` - 添加直播商品
+- `PUT /api/live/product/update/{productId}` - 更新直播商品
+- `DELETE /api/live/product/{productId}` - 删除直播商品
+- `POST /api/live/product/{productId}/toggle` - 切换商品上下架状态
+- `GET /api/live/product/{productId}` - 获取商品详情
+- `GET /api/live/product/room/{roomId}` - 获取直播间的商品列表
+- `GET /api/live/product/anchor` - 获取当前主播的商品列表
+
+### WebSocket 实时通信
+- `/ws/danmaku/{roomId}` - 弹幕WebSocket连接
+- `/ws/live/{roomId}` - 直播间用户WebSocket连接
+
+**WebSocket消息格式：**
+```json
+// 发送弹幕
+{ "type": "danmaku", "content": "弹幕内容", "color": "#FFFFFF" }
+
+// 接收弹幕/消息
+{ "type": "danmaku", "data": { "nickname": "用户名", "content": "内容", "color": "#FFFFFF" } }
+
+// 心跳
+{ "type": "heartbeat", "data": timestamp }
+
+// 观众数量更新
+{ "type": "viewer_count", "data": 100 }
+
+// 点赞通知
+{ "type": "like", "data": userId }
+```
+
 ## 开发规范
 
 仓库级约定（前端 uni-app、Git、协作等）见 **[../docs/CODING-STANDARDS.md](../docs/CODING-STANDARDS.md)**。本节仅列本服务 API 约定。
@@ -158,6 +217,7 @@ java -jar target/wy-spring-0.0.1-SNAPSHOT.jar
 | 7xxx  | 文件上传错误 |
 | 8xxx  | OCR错误 |
 | 9xxx  | 系统错误 |
+| 10xxx | 直播错误 |
 
 ## 百度 OCR（试卷扫描识别）
 
